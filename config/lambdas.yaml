@@ -1,0 +1,5 @@
+lambdas:
+  - name: user-service-proxy
+    secret_name: user-service/prod
+  - name: payment-service-proxy
+    secret_name: payment-service/prod
