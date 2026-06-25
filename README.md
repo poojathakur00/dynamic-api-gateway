@@ -15,8 +15,7 @@ add a new proxy.
 ├── config/
 │   ├── lambdas.yaml          # the master list: one entry per proxy
 │   └── swagger/
-│       ├── user-service-proxy.json     # clean OpenAPI, no AWS extensions
-│       └── payment-service-proxy.json
+│       ├── <name-of-the-lambda>.json     # clean OpenAPI, no AWS extensions
 ├── lambda_code/
 │   └── handler.py            # ONE shared codebase for every proxy (Python 3.12)
 ├── modules/
