@@ -20,7 +20,8 @@ module "lambda" {
   source   = "./modules/lambda"
 
   name         = each.value.name
-  secret_name  = each.value.secret_name
+  secret_name  = module.secret[each.key].name
   secret_arn   = module.secret[each.key].arn
+  auth_type    = each.value.auth_type
   swagger_path = "${path.module}/config/swagger/${each.value.name}.json"
 }

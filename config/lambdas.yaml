@@ -1,5 +1,7 @@
 lambdas:
-  - name: user-service-proxy
-    secret_name: user-service/prod
-  - name: payment-service-proxy
-    secret_name: payment-service/prod
+  - name: demo-store-proxy
+    secret_name: demo-store/prod
+    auth_type: 'databricks_oauth'
+  
+
+

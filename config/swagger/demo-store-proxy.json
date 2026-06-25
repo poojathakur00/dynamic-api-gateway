@@ -1,0 +1,548 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Demo Store API",
+    "description": "REST API for Customers, Products, and Orders — deployed on Databricks Apps",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Info"
+        ],
+        "summary": "Root",
+        "operationId": "root",
+        "responses": {
+          "200": {
+            "description": "API info"
+          }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "List all customers",
+        "operationId": "list_customers",
+        "responses": {
+          "200": {
+            "description": "List of customers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Create a new customer",
+        "operationId": "create_customer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/customers/{customer_id}": {
+      "parameters": [
+        {
+          "name": "customer_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CF20A84DA"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Get a customer by ID",
+        "operationId": "get_customer",
+        "responses": {
+          "200": {
+            "description": "Customer found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Update customer name and/or address",
+        "operationId": "update_customer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "List all products",
+        "operationId": "list_products",
+        "responses": {
+          "200": {
+            "description": "List of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{product_id}": {
+      "parameters": [
+        {
+          "name": "product_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "P001"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get a product by ID (P001–P010)",
+        "operationId": "get_product",
+        "responses": {
+          "200": {
+            "description": "Product found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create a new order",
+        "operationId": "create_order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/orders/customer/{customer_id}": {
+      "parameters": [
+        {
+          "name": "customer_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "CF20A84DA"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get all orders for a customer",
+        "operationId": "get_orders_by_customer",
+        "responses": {
+          "200": {
+            "description": "List of orders for the customer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}": {
+      "parameters": [
+        {
+          "name": "order_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "O6EA8B016"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Delete an entire order",
+        "operationId": "delete_order",
+        "responses": {
+          "200": {
+            "description": "Order deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Order deleted"
+                    },
+                    "order": {
+                      "$ref": "#/components/schemas/Order"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/items": {
+      "parameters": [
+        {
+          "name": "order_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "O6EA8B016"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Add products to an existing order",
+        "operationId": "add_items_to_order",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderAddItems"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order updated with new items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "CF20A84DA"
+          },
+          "name": {
+            "type": "string",
+            "example": "Alice Smith"
+          },
+          "email": {
+            "type": "string",
+            "example": "alice@example.com"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Main St"
+          }
+        }
+      },
+      "CustomerCreate": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "address"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Alice Smith"
+          },
+          "email": {
+            "type": "string",
+            "example": "alice@example.com"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Main St"
+          }
+        }
+      },
+      "CustomerUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Alice Johnson"
+          },
+          "address": {
+            "type": "string",
+            "example": "999 Oak Ave"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "P001"
+          },
+          "name": {
+            "type": "string",
+            "example": "Wireless Headphones"
+          },
+          "category": {
+            "type": "string",
+            "example": "Electronics"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "example": "O6EA8B016"
+          },
+          "customer_id": {
+            "type": "string",
+            "example": "CF20A84DA"
+          },
+          "product_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "P001",
+              "P003",
+              "P007"
+            ]
+          }
+        }
+      },
+      "OrderCreate": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "product_ids"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "example": "CF20A84DA"
+          },
+          "product_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "P001",
+              "P003"
+            ]
+          }
+        }
+      },
+      "OrderAddItems": {
+        "type": "object",
+        "required": [
+          "product_ids"
+        ],
+        "properties": {
+          "product_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "P007",
+              "P010"
+            ]
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "detail": {
+                  "type": "string",
+                  "example": "Customer not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "detail": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

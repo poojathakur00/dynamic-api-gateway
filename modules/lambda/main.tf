@@ -18,6 +18,11 @@ variable "swagger_path" {
   type        = string
 }
 
+variable "auth_type" {
+  description = "Type of authentication to use for this lambda"
+  type        = string
+}
+
 # --- Zip the shared lambda code. Same source dir every time, unique zip per instance. ---
 data "archive_file" "this" {
   type        = "zip"
@@ -73,26 +78,38 @@ resource "aws_lambda_function" "this" {
   environment {
     variables = {
       SECRET_NAME = var.secret_name
+      AUTH_TYPE   = var.auth_type
     }
   }
 }
 
 # --- Dynamically inject the AWS-specific integration into every path/method. ---
 # Backend devs write plain OpenAPI — no AWS knowledge required.
+# --- Dynamically inject the AWS-specific integration into every path/method. ---
+# Backend devs write plain OpenAPI — no AWS knowledge required.
 locals {
   swagger_raw = jsondecode(file(var.swagger_path))
 
+  # Only these keys under a path item are actual HTTP methods. A path item
+  # can also carry sibling keys like "parameters", "summary", or "$ref" —
+  # those must be left untouched, not merged with an integration block.
+  http_methods = ["get", "put", "post", "delete", "options", "head", "patch", "trace"]
+
   swagger_with_integration = merge(local.swagger_raw, {
     paths = {
-      for path, methods in local.swagger_raw.paths : path => {
-        for method, definition in methods : method => merge(definition, {
-          "x-amazon-apigateway-integration" = {
-            type       = "aws_proxy"
-            httpMethod = "POST"
-            uri        = aws_lambda_function.this.invoke_arn
-          }
-        })
-      }
+      for path, methods in local.swagger_raw.paths : path => merge(
+        methods,
+        {
+          for method, definition in methods : method => merge(definition, {
+            "x-amazon-apigateway-integration" = {
+              type       = "aws_proxy"
+              httpMethod = "POST"
+              uri        = aws_lambda_function.this.invoke_arn
+            }
+          })
+          if contains(local.http_methods, method)
+        }
+      )
     }
   })
 }

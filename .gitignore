@@ -4,3 +4,5 @@
 *.tfstate.backup
 *.tfvars
 builds/*.zip
+venv/
+__pycache__/
