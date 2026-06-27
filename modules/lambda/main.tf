@@ -19,7 +19,7 @@ variable "swagger_path" {
 }
 
 variable "auth_type" {
-  description = "Type of authentication to use for this lambda"
+  description = "Which auth strategy handler.py should use at runtime: 'databricks_oauth' or 'api_key'"
   type        = string
 }
 
@@ -85,8 +85,6 @@ resource "aws_lambda_function" "this" {
 
 # --- Dynamically inject the AWS-specific integration into every path/method. ---
 # Backend devs write plain OpenAPI — no AWS knowledge required.
-# --- Dynamically inject the AWS-specific integration into every path/method. ---
-# Backend devs write plain OpenAPI — no AWS knowledge required.
 locals {
   swagger_raw = jsondecode(file(var.swagger_path))
 
@@ -106,11 +104,32 @@ locals {
               httpMethod = "POST"
               uri        = aws_lambda_function.this.invoke_arn
             }
+            security = [{ api_key = [] }]
           })
           if contains(local.http_methods, method)
         }
       )
     }
+
+    # API Gateway requires the apiKey securityScheme to be declared
+    # alongside the per-operation "security" requirement above.
+    # Preserve any existing components (schemas, etc.) the dev's swagger
+    # already has — only add/merge the securitySchemes key.
+    components = merge(
+      try(local.swagger_raw.components, {}),
+      {
+        securitySchemes = merge(
+          try(local.swagger_raw.components.securitySchemes, {}),
+          {
+            api_key = {
+              type = "apiKey"
+              name = "x-api-key"
+              in   = "header"
+            }
+          }
+        )
+      }
+    )
   })
 }
 
@@ -138,6 +157,41 @@ resource "aws_api_gateway_stage" "this" {
   stage_name    = "prod"
 }
 
+# --- API Key: required on every method via the injected "security" block above ---
+resource "aws_api_gateway_api_key" "this" {
+  name    = "${var.name}-key"
+  enabled = true
+}
+
+resource "aws_api_gateway_usage_plan" "this" {
+  name = "${var.name}-usage-plan"
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.this.id
+    stage  = aws_api_gateway_stage.this.stage_name
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "this" {
+  key_id        = aws_api_gateway_api_key.this.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.this.id
+}
+
+# Store the generated key value in Secrets Manager rather than exposing it
+# via a terraform output. Outputs (even sensitive=true ones) still land in
+# the state file in plaintext — sensitive only redacts CLI/log display,
+# it doesn't encrypt state. Securing the state backend itself (encrypted
+# S3 bucket + restricted IAM, or Terraform Cloud) still matters regardless.
+resource "aws_secretsmanager_secret" "api_key" {
+  name = "${var.name}-api-key"
+}
+
+resource "aws_secretsmanager_secret_version" "api_key" {
+  secret_id     = aws_secretsmanager_secret.api_key.id
+  secret_string = aws_api_gateway_api_key.this.value
+}
+
 # --- Lambda Permission: let API Gateway actually invoke this lambda ---
 resource "aws_lambda_permission" "this" {
   action        = "lambda:InvokeFunction"
@@ -153,4 +207,13 @@ output "api_url" {
 
 output "lambda_arn" {
   value = aws_lambda_function.this.arn
+}
+
+output "api_key_id" {
+  value = aws_api_gateway_api_key.this.id
+}
+
+output "api_key_secret_name" {
+  description = "Secrets Manager secret holding the actual key value — retrieve via AWS console/CLI, not terraform output"
+  value       = aws_secretsmanager_secret.api_key.name
 }
